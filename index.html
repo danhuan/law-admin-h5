@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>律所案件登记系统</title>
+    <title>律所案件管理系统</title>
     <style>
         * {
             margin: 0;
@@ -765,6 +765,88 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* 新增：批量操作区域 */
+        .batch-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .batch-btn {
+            padding: 10px 16px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .batch-btn:hover {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+        }
+        
+        /* 新增：编辑按钮 */
+        .btn-edit {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border-color: #3498db;
+        }
+        
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+        
+        /* 新增：案件提醒 */
+        .reminder {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #fff9db;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border-left: 4px solid #ffd43b;
+        }
+        
+        .reminder-icon {
+            margin-right: 12px;
+            font-size: 20px;
+            color: #e67700;
+        }
+        
+        .reminder-content {
+            flex: 1;
+        }
+        
+        .reminder-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #2c3e50;
+        }
+        
+        .reminder-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* 新增：案件筛选信息 */
+        .filter-info {
+            background: #e7f5ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #228be6;
+            display: none;
+        }
+        
+        .clear-filter {
+            margin-left: 8px;
+            color: #e74c3c;
+            cursor: pointer;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -857,9 +939,24 @@
 
             <!-- 案件列表页面 -->
             <div id="list" class="page">
+                <!-- 案件提醒 -->
+                <div class="reminder">
+                    <div class="reminder-icon">⏰</div>
+                    <div class="reminder-content">
+                        <div class="reminder-title">案件提醒</div>
+                        <div class="reminder-desc">您有 <span id="pendingCount">0</span> 个待处理案件，<span id="upcomingCount">0</span> 个即将开庭的案件</div>
+                    </div>
+                </div>
+                
                 <div class="search-box">
                     <input type="text" class="search-input" id="searchInput" placeholder="搜索案件编号、名称或委托人">
                     <button class="search-btn" onclick="searchCases()">🔍</button>
+                </div>
+                
+                <!-- 筛选信息 -->
+                <div class="filter-info" id="filterInfo">
+                    当前筛选: <span id="currentFilters"></span>
+                    <span class="clear-filter" onclick="clearFilters()">清除筛选</span>
                 </div>
                 
                 <div class="sort-options">
@@ -867,6 +964,12 @@
                     <button class="sort-btn" data-sort="updateTimeDesc" onclick="sortCases('updateTimeDesc')">最近更新</button>
                     <button class="sort-btn" data-sort="amountDesc" onclick="sortCases('amountDesc')">金额最高</button>
                     <button class="sort-btn" data-sort="pending" onclick="sortCases('pending')">待处理</button>
+                </div>
+                
+                <div class="batch-actions">
+                    <button class="batch-btn" onclick="batchUpdateStatus('待处理')">设为待处理</button>
+                    <button class="batch-btn" onclick="batchUpdateStatus('处理中')">设为处理中</button>
+                    <button class="batch-btn" onclick="batchUpdateStatus('已完成')">设为已完成</button>
                 </div>
 
                 <div class="filter-bar">
@@ -952,6 +1055,10 @@
                             <span class="stat-label">最高案件金额</span>
                             <span class="stat-value" id="maxAmount">¥0</span>
                         </div>
+                        <div class="stat-item">
+                            <span class="stat-label">统计说明</span>
+                            <span class="stat-value">仅含金额>0案件</span>
+                        </div>
                     </div>
                 </div>
 
@@ -974,7 +1081,21 @@
                 <!-- 案件详情内容 -->
             </div>
             <div class="modal-actions">
+                <button class="btn-small btn-edit" id="editBtn">编辑案件</button>
                 <button class="btn-small btn-delete" id="deleteBtn">删除案件</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑案件模态框 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑案件</h3>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div id="editForm">
+                <!-- 编辑表单内容 -->
             </div>
         </div>
     </div>
@@ -987,6 +1108,15 @@
         let cases = [];
         let caseCounter = 1;
         let currentCaseId = null;
+        
+        // 当前筛选和排序状态
+        let currentSort = 'createTimeDesc';
+        let currentFilters = {
+            status: '',
+            type: '',
+            lawyer: '',
+            search: ''
+        };
         
         // 页面切换
         function showPage(pageId) {
@@ -1009,6 +1139,7 @@
             // 如果是列表页面，刷新列表
             if (pageId === 'list') {
                 renderCaseList();
+                updateReminder();
             }
             
             // 如果是统计页面，刷新统计
@@ -1166,35 +1297,183 @@
             // 如果当前在列表页面，刷新列表
             if (document.getElementById('list').classList.contains('active')) {
                 renderCaseList();
+                updateReminder();
             }
         });
         
+        // 获取筛选后的案件列表
+        function getFilteredCases() {
+            let filteredCases = [...cases];
+            
+            // 应用搜索筛选
+            if (currentFilters.search) {
+                const keyword = currentFilters.search.toLowerCase();
+                filteredCases = filteredCases.filter(caseItem =>
+                    caseItem.id.toLowerCase().includes(keyword) ||
+                    caseItem.name.toLowerCase().includes(keyword) ||
+                    caseItem.clientName.toLowerCase().includes(keyword) ||
+                    caseItem.type.toLowerCase().includes(keyword) ||
+                    caseItem.lawyer.toLowerCase().includes(keyword)
+                );
+            }
+            
+            // 应用状态筛选
+            if (currentFilters.status) {
+                filteredCases = filteredCases.filter(c => c.status === currentFilters.status);
+            }
+            
+            // 应用类型筛选
+            if (currentFilters.type) {
+                filteredCases = filteredCases.filter(c => c.type === currentFilters.type);
+            }
+            
+            // 应用律师筛选
+            if (currentFilters.lawyer) {
+                filteredCases = filteredCases.filter(c => c.lawyer === currentFilters.lawyer);
+            }
+            
+            return filteredCases;
+        }
+        
+        // 对案件列表进行排序
+        function sortCases(criteria) {
+            // 更新排序规则
+            currentSort = criteria;
+            
+            // 更新排序按钮状态
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.sort === criteria) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 重新渲染列表
+            renderCaseList();
+        }
+        
+        // 应用排序规则
+        function applySort(casesList) {
+            let sortedCases = [...casesList];
+            
+            switch(currentSort) {
+                case 'createTimeDesc':
+                    sortedCases.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+                    break;
+                case 'updateTimeDesc':
+                    sortedCases.sort((a, b) => new Date(b.updateTime) - new Date(a.updateTime));
+                    break;
+                case 'amountDesc':
+                    sortedCases.sort((a, b) => (parseFloat(b.amount) || 0) - (parseFloat(a.amount) || 0));
+                    break;
+                case 'pending':
+                    sortedCases.sort((a, b) => {
+                        if (a.status === '待处理' && b.status !== '待处理') return -1;
+                        if (a.status !== '待处理' && b.status === '待处理') return 1;
+                        return 0;
+                    });
+                    break;
+                default:
+                    // 默认排序
+                    sortedCases.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+            }
+            
+            return sortedCases;
+        }
+        
+        // 筛选案件
+        function filterCases() {
+            // 更新筛选条件
+            currentFilters = {
+                status: document.getElementById('statusFilter').value,
+                type: document.getElementById('typeFilter').value,
+                lawyer: document.getElementById('lawyerFilter').value,
+                search: document.getElementById('searchInput').value.toLowerCase().trim()
+            };
+            
+            // 更新筛选信息显示
+            updateFilterInfo();
+            
+            // 重新渲染列表
+            renderCaseList();
+        }
+        
+        // 更新筛选信息显示
+        function updateFilterInfo() {
+            const filterInfo = document.getElementById('filterInfo');
+            const currentFiltersEl = document.getElementById('currentFilters');
+            
+            const filters = [];
+            if (currentFilters.status) filters.push(`状态: ${currentFilters.status}`);
+            if (currentFilters.type) filters.push(`类型: ${currentFilters.type}`);
+            if (currentFilters.lawyer) filters.push(`律师: ${currentFilters.lawyer}`);
+            if (currentFilters.search) filters.push(`搜索: ${currentFilters.search}`);
+            
+            if (filters.length > 0) {
+                filterInfo.style.display = 'block';
+                currentFiltersEl.textContent = filters.join(', ');
+            } else {
+                filterInfo.style.display = 'none';
+            }
+        }
+        
+        // 清除筛选
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('lawyerFilter').value = '';
+            document.getElementById('searchInput').value = '';
+            
+            currentFilters = {
+                status: '',
+                type: '',
+                lawyer: '',
+                search: ''
+            };
+            
+            updateFilterInfo();
+            renderCaseList();
+        }
+        
+        // 搜索案件
+        function searchCases() {
+            currentFilters.search = document.getElementById('searchInput').value.toLowerCase().trim();
+            updateFilterInfo();
+            renderCaseList();
+        }
+        
         // 渲染案件列表
-        function renderCaseList(filteredCases = null) {
+        function renderCaseList() {
             const caseList = document.getElementById('caseList');
-            const casesToRender = filteredCases || cases;
             
             // 显示加载指示器
             const loader = document.getElementById('listLoader');
             loader.style.display = 'block';
             caseList.innerHTML = '';
             
+            // 获取筛选后的案件
+            let filteredCases = getFilteredCases();
+            
+            // 应用排序
+            let sortedCases = applySort(filteredCases);
+            
             // 模拟加载延迟
             setTimeout(() => {
                 loader.style.display = 'none';
                 
-                if (casesToRender.length === 0) {
+                if (sortedCases.length === 0) {
                     caseList.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-icon">📁</div>
-                            <p>暂无案件记录</p>
+                            <p>没有找到符合条件的案件</p>
+                            <p style="margin-top: 10px; font-size: 14px; color: #999;">请尝试其他筛选条件</p>
                         </div>
                     `;
                     return;
                 }
                 
-                caseList.innerHTML = casesToRender.map(caseItem => `
-                    <div class="case-card">
+                caseList.innerHTML = sortedCases.map(caseItem => `
+                    <div class="case-card" data-id="${caseItem.id}">
                         <div class="case-header">
                             <div class="case-id">${caseItem.id}</div>
                             <div class="case-status ${getStatusClass(caseItem.status)}">${caseItem.status}</div>
@@ -1221,83 +1500,6 @@
                 case '已完成': return 'status-completed';
                 default: return 'status-pending';
             }
-        }
-        
-        // 筛选案件
-        function filterCases() {
-            const statusFilter = document.getElementById('statusFilter').value;
-            const typeFilter = document.getElementById('typeFilter').value;
-            const lawyerFilter = document.getElementById('lawyerFilter').value;
-            
-            let filteredCases = cases;
-            
-            if (statusFilter) {
-                filteredCases = filteredCases.filter(c => c.status === statusFilter);
-            }
-            
-            if (typeFilter) {
-                filteredCases = filteredCases.filter(c => c.type === typeFilter);
-            }
-            
-            if (lawyerFilter) {
-                filteredCases = filteredCases.filter(c => c.lawyer === lawyerFilter);
-            }
-            
-            // 如果有搜索关键词，也要应用搜索过滤
-            const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
-            if (keyword) {
-                filteredCases = filteredCases.filter(caseItem =>
-                    caseItem.id.toLowerCase().includes(keyword) ||
-                    caseItem.name.toLowerCase().includes(keyword) ||
-                    caseItem.clientName.toLowerCase().includes(keyword) ||
-                    caseItem.type.toLowerCase().includes(keyword) ||
-                    caseItem.lawyer.toLowerCase().includes(keyword)
-                );
-            }
-            
-            renderCaseList(filteredCases);
-        }
-        
-        // 搜索案件
-        function searchCases() {
-            filterCases();
-        }
-        
-        // 排序案件
-        function sortCases(criteria) {
-            // 更新排序按钮状态
-            document.querySelectorAll('.sort-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.sort === criteria) {
-                    btn.classList.add('active');
-                }
-            });
-            
-            let sortedCases = [...cases];
-            
-            switch(criteria) {
-                case 'createTimeDesc':
-                    sortedCases.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
-                    break;
-                case 'updateTimeDesc':
-                    sortedCases.sort((a, b) => new Date(b.updateTime) - new Date(a.updateTime));
-                    break;
-                case 'amountDesc':
-                    sortedCases.sort((a, b) => (parseFloat(b.amount) || 0) - (parseFloat(a.amount) || 0));
-                    break;
-                case 'pending':
-                    sortedCases.sort((a, b) => {
-                        if (a.status === '待处理' && b.status !== '待处理') return -1;
-                        if (a.status !== '待处理' && b.status === '待处理') return 1;
-                        return 0;
-                    });
-                    break;
-                default:
-                    // 默认排序
-                    sortedCases.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
-            }
-            
-            renderCaseList(sortedCases);
         }
         
         // 查看案件详情
@@ -1363,14 +1565,192 @@
                 </div>
             `;
             
-            // 设置删除按钮事件
+            // 设置按钮事件
             document.getElementById('deleteBtn').onclick = function() {
                 if (confirm('确定要删除这个案件吗？')) {
                     deleteCase(caseId);
                 }
             };
             
+            document.getElementById('editBtn').onclick = function() {
+                closeModal();
+                openEditModal(caseItem);
+            };
+            
             document.getElementById('caseModal').classList.add('show');
+        }
+        
+        // 打开编辑案件模态框
+        function openEditModal(caseItem) {
+            const editForm = document.getElementById('editForm');
+            editForm.innerHTML = `
+                <form id="editCaseForm">
+                    <div class="form-group">
+                        <label class="form-label">案件编号</label>
+                        <input type="text" class="form-input" value="${caseItem.id}" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件名称 *</label>
+                        <input type="text" class="form-input" id="editCaseName" value="${caseItem.name}" required>
+                        <div class="error-message" id="editCaseNameError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件类型 *</label>
+                        <select class="form-select" id="editCaseType" required>
+                            <option value="">请选择案件类型</option>
+                            <option value="民事诉讼" ${caseItem.type === '民事诉讼' ? 'selected' : ''}>民事诉讼</option>
+                            <option value="刑事辩护" ${caseItem.type === '刑事辩护' ? 'selected' : ''}>刑事辩护</option>
+                            <option value="行政诉讼" ${caseItem.type === '行政诉讼' ? 'selected' : ''}>行政诉讼</option>
+                            <option value="合同纠纷" ${caseItem.type === '合同纠纷' ? 'selected' : ''}>合同纠纷</option>
+                            <option value="婚姻家庭" ${caseItem.type === '婚姻家庭' ? 'selected' : ''}>婚姻家庭</option>
+                            <option value="房产纠纷" ${caseItem.type === '房产纠纷' ? 'selected' : ''}>房产纠纷</option>
+                            <option value="劳动争议" ${caseItem.type === '劳动争议' ? 'selected' : ''}>劳动争议</option>
+                            <option value="知识产权" ${caseItem.type === '知识产权' ? 'selected' : ''}>知识产权</option>
+                            <option value="其他" ${caseItem.type === '其他' ? 'selected' : ''}>其他</option>
+                        </select>
+                        <div class="error-message" id="editCaseTypeError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">委托人姓名 *</label>
+                        <input type="text" class="form-input" id="editClientName" value="${caseItem.clientName}" required>
+                        <div class="error-message" id="editClientNameError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">委托人电话 *</label>
+                        <input type="tel" class="form-input" id="editClientPhone" value="${caseItem.clientPhone}" required>
+                        <div class="error-message" id="editClientPhoneError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">承办律师 *</label>
+                        <select class="form-select" id="editLawyer" required>
+                            <option value="">请选择承办律师</option>
+                            <option value="张律师" ${caseItem.lawyer === '张律师' ? 'selected' : ''}>张律师</option>
+                            <option value="李律师" ${caseItem.lawyer === '李律师' ? 'selected' : ''}>李律师</option>
+                            <option value="王律师" ${caseItem.lawyer === '王律师' ? 'selected' : ''}>王律师</option>
+                            <option value="刘律师" ${caseItem.lawyer === '刘律师' ? 'selected' : ''}>刘律师</option>
+                            <option value="陈律师" ${caseItem.lawyer === '陈律师' ? 'selected' : ''}>陈律师</option>
+                        </select>
+                        <div class="error-message" id="editLawyerError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件描述</label>
+                        <textarea class="form-textarea" id="editCaseDesc">${caseItem.description || ''}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">预计开庭时间</label>
+                        <input type="date" class="form-input" id="editCourtDate" value="${caseItem.courtDate || ''}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件金额</label>
+                        <input type="number" class="form-input" id="editCaseAmount" value="${caseItem.amount || ''}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件状态</label>
+                        <select class="form-select" id="editCaseStatus">
+                            <option value="待处理" ${caseItem.status === '待处理' ? 'selected' : ''}>待处理</option>
+                            <option value="处理中" ${caseItem.status === '处理中' ? 'selected' : ''}>处理中</option>
+                            <option value="已完成" ${caseItem.status === '已完成' ? 'selected' : ''}>已完成</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn">保存修改</button>
+                </form>
+            `;
+            
+            // 绑定编辑表单提交事件
+            document.getElementById('editCaseForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveEditedCase(caseItem.id);
+            });
+            
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        // 保存编辑后的案件
+        function saveEditedCase(caseId) {
+            const caseItem = cases.find(c => c.id === caseId);
+            if (!caseItem) return;
+            
+            // 清除所有错误信息
+            clearError('editCaseName');
+            clearError('editCaseType');
+            clearError('editClientName');
+            clearError('editClientPhone');
+            clearError('editLawyer');
+            
+            let isValid = true;
+            const caseName = document.getElementById('editCaseName').value.trim();
+            const caseType = document.getElementById('editCaseType').value;
+            const clientName = document.getElementById('editClientName').value.trim();
+            const clientPhone = document.getElementById('editClientPhone').value.trim();
+            const lawyer = document.getElementById('editLawyer').value;
+            
+            // 表单验证
+            if (!caseName) {
+                showError('editCaseName', '请输入案件名称');
+                isValid = false;
+            }
+            
+            if (!caseType) {
+                showError('editCaseType', '请选择案件类型');
+                isValid = false;
+            }
+            
+            if (!clientName) {
+                showError('editClientName', '请输入委托人姓名');
+                isValid = false;
+            }
+            
+            if (!clientPhone) {
+                showError('editClientPhone', '请输入委托人电话');
+                isValid = false;
+            } else if (!/^1[3-9]\d{9}$/.test(clientPhone)) {
+                showError('editClientPhone', '请输入有效的手机号码');
+                isValid = false;
+            }
+            
+            if (!lawyer) {
+                showError('editLawyer', '请选择承办律师');
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // 更新案件信息
+            caseItem.name = caseName;
+            caseItem.type = caseType;
+            caseItem.clientName = clientName;
+            caseItem.clientPhone = clientPhone;
+            caseItem.lawyer = lawyer;
+            caseItem.description = document.getElementById('editCaseDesc').value;
+            caseItem.courtDate = document.getElementById('editCourtDate').value;
+            caseItem.amount = document.getElementById('editCaseAmount').value || '0';
+            caseItem.status = document.getElementById('editCaseStatus').value;
+            caseItem.updateTime = new Date().toLocaleString();
+            
+            // 保存到本地存储
+            saveToLocalStorage();
+            
+            // 关闭编辑模态框
+            closeEditModal();
+            
+            // 刷新列表和统计
+            renderCaseList();
+            if (document.getElementById('stats').classList.contains('active')) {
+                renderStats();
+            }
+            
+            // 显示成功消息
+            showToast('案件信息已更新！');
         }
         
         // 删除案件
@@ -1408,10 +1788,64 @@
             }
         }
         
+        // 批量更新案件状态
+        function batchUpdateStatus(status) {
+            // 获取当前筛选条件下的案件
+            let filteredCases = getFilteredCases();
+            
+            if (filteredCases.length === 0) {
+                showToast('没有可更新的案件');
+                return;
+            }
+            
+            if (confirm(`确定要将筛选出的 ${filteredCases.length} 个案件状态更新为 ${status} 吗？`)) {
+                const caseIds = filteredCases.map(c => c.id);
+                
+                cases.forEach(c => {
+                    if (caseIds.includes(c.id)) {
+                        c.status = status;
+                        c.updateTime = new Date().toLocaleString();
+                    }
+                });
+                
+                saveToLocalStorage();
+                renderCaseList();
+                showToast(`已更新 ${caseIds.length} 个案件状态为 ${status}`);
+                
+                if (document.getElementById('stats').classList.contains('active')) {
+                    renderStats();
+                }
+            }
+        }
+        
+        // 更新案件提醒
+        function updateReminder() {
+            const pending = cases.filter(c => c.status === '待处理').length;
+            
+            // 获取未来7天内开庭的案件
+            const today = new Date();
+            const nextWeek = new Date(today);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            
+            const upcoming = cases.filter(c => {
+                if (!c.courtDate) return false;
+                const courtDate = new Date(c.courtDate);
+                return courtDate >= today && courtDate <= nextWeek;
+            }).length;
+            
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('upcomingCount').textContent = upcoming;
+        }
+        
         // 关闭模态框
         function closeModal() {
             document.getElementById('caseModal').classList.remove('show');
             currentCaseId = null;
+        }
+        
+        // 关闭编辑模态框
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
         }
         
         // 渲染统计信息
@@ -1434,11 +1868,11 @@
             });
             
             const typeChart = document.getElementById('typeChart');
-            const maxTypeCount = Math.max(...Object.values(typeStats));
+            const maxTypeCount = Math.max(...Object.values(typeStats), 1);
             typeChart.innerHTML = Object.entries(typeStats)
                 .sort((a, b) => b[1] - a[1])
                 .map(([type, count]) => {
-                    const percentage = maxTypeCount > 0 ? (count / maxTypeCount) * 100 : 0;
+                    const percentage = (count / maxTypeCount) * 100;
                     return `
                         <div class="stat-item">
                             <div>
@@ -1459,11 +1893,11 @@
             });
             
             const lawyerChart = document.getElementById('lawyerChart');
-            const maxLawyerCount = Math.max(...Object.values(lawyerStats));
+            const maxLawyerCount = Math.max(...Object.values(lawyerStats), 1);
             lawyerChart.innerHTML = Object.entries(lawyerStats)
                 .sort((a, b) => b[1] - a[1])
                 .map(([lawyer, count]) => {
-                    const percentage = maxLawyerCount > 0 ? (count / maxLawyerCount) * 100 : 0;
+                    const percentage = (count / maxLawyerCount) * 100;
                     return `
                         <div class="stat-item">
                             <div>
@@ -1531,11 +1965,27 @@
             }
         });
         
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+        
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             // 从本地存储加载数据
             loadFromLocalStorage();
             initForm();
+            
+            // 初始化排序按钮状态
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                if (btn.dataset.sort === currentSort) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 更新提醒
+            updateReminder();
             
             // 添加丰富的示例数据（仅当本地存储为空时）
             if (cases.length === 0) {
