@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>律所案件管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 375px;
+            margin: 0 auto;
+            background: #f8f9fa;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="0.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .tab-item {
+            flex: 1;
+            padding: 18px 15px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .tab-item::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 3px 3px 0 0;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tab-item.active {
+            color: #667eea;
+            background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08));
+        }
+
+        .tab-item.active::before {
+            width: 30px;
+        }
+
+        .tab-item:hover:not(.active) {
+            background: rgba(102,126,234,0.05);
+            color: #667eea;
+        }
+
+        .content {
+            padding: 24px;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: pageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes pageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 15px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.6;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .case-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .case-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .case-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+
+        .case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .case-id {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 17px;
+            letter-spacing: 0.3px;
+        }
+
+        .case-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+        }
+
+        .status-processing {
+            background: linear-gradient(135deg, #cce5ff, #74b9ff);
+            color: #0056b3;
+        }
+
+        .status-completed {
+            background: linear-gradient(135deg, #d4edda, #00b894);
+            color: #155724;
+        }
+
+        .case-info {
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .case-info strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .case-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-small {
+            flex: 1;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-small:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 50px 16px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 15px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stats-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stats-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .stats-number {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .stats-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.show {
+            display: flex;
+            animation: modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                backdrop-filter: blur(0);
+            }
+            to {
+                opacity: 1;
+                backdrop-filter: blur(4px);
+            }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transform: scale(0.9);
+            animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: scale(0.9) translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .close-btn {
+            background: #f8f9fa;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .close-btn:hover {
+            background: #e9ecef;
+            color: #333;
+            transform: rotate(90deg);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 新增样式：筛选和排序 */
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* 统计图表样式 */
+        .chart-container {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f1f3f4;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-item:hover {
+            background: #e9ecef;
+            transform: translateX(4px);
+        }
+
+        .stat-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .recent-cases {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .recent-case-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .recent-case-item:last-child {
+            border-bottom: none;
+        }
+
+        .recent-case-item:hover {
+            background: #f8f9fa;
+            margin: 0 -12px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .case-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .dot-pending { background: #ffc107; }
+        .dot-processing { background: #17a2b8; }
+        .dot-completed { background: #28a745; }
+
+        .recent-case-content {
+            flex: 1;
+        }
+
+        .recent-case-name {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .recent-case-meta {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 新增样式：表单错误提示 */
+        .error-message {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 6px;
+            display: none;
+        }
+        
+        .form-input.error, .form-select.error {
+            border-color: #e74c3c;
+        }
+        
+        /* 新增样式：成功提示 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        /* 新增样式：删除按钮 */
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            border-color: #e74c3c;
+        }
+        
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        /* 新增样式：排序选项 */
+        .sort-options {
+            display: flex;
+            margin-bottom: 16px;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        
+        .sort-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .sort-btn.active {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        /* 新增样式：加载指示器 */
+        .loader {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(102, 126, 234, 0.2);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 新增：批量操作区域 */
+        .batch-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .batch-btn {
+            padding: 10px 16px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .batch-btn:hover {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+        }
+        
+        /* 新增：编辑按钮 */
+        .btn-edit {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border-color: #3498db;
+        }
+        
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+        
+        /* 新增：案件提醒 */
+        .reminder {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #fff9db;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border-left: 4px solid #ffd43b;
+        }
+        
+        .reminder-icon {
+            margin-right: 12px;
+            font-size: 20px;
+            color: #e67700;
+        }
+        
+        .reminder-content {
+            flex: 1;
+        }
+        
+        .reminder-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #2c3e50;
+        }
+        
+        .reminder-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* 新增：案件筛选信息 */
+        .filter-info {
+            background: #e7f5ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #228be6;
+            display: none;
+        }
+        
+        .clear-filter {
+            margin-left: 8px;
+            color: #e74c3c;
+            cursor: pointer;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>律所案件管理系统</h1>
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab-item active" onclick="showPage('register')">案件登记</button>
+            <button class="tab-item" onclick="showPage('list')">案件列表</button>
+            <button class="tab-item" onclick="showPage('stats')">统计分析</button>
+        </div>
+
+        <div class="content">
+            <!-- 案件登记页面 -->
+            <div id="register" class="page active">
+                <form id="caseForm">
+                    <div class="form-group">
+                        <label class="form-label">案件编号</label>
+                        <input type="text" class="form-input" id="caseId" placeholder="系统自动生成" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">案件名称 *</label>
+                        <input type="text" class="form-input" id="caseName" placeholder="请输入案件名称" required>
+                        <div class="error-message" id="caseNameError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">案件类型 *</label>
+                        <select class="form-select" id="caseType" required>
+                            <option value="">请选择案件类型</option>
+                            <option value="民事诉讼">民事诉讼</option>
+                            <option value="刑事辩护">刑事辩护</option>
+                            <option value="行政诉讼">行政诉讼</option>
+                            <option value="合同纠纷">合同纠纷</option>
+                            <option value="婚姻家庭">婚姻家庭</option>
+                            <option value="房产纠纷">房产纠纷</option>
+                            <option value="劳动争议">劳动争议</option>
+                            <option value="知识产权">知识产权</option>
+                            <option value="其他">其他</option>
+                        </select>
+                        <div class="error-message" id="caseTypeError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">委托人姓名 *</label>
+                        <input type="text" class="form-input" id="clientName" placeholder="请输入委托人姓名" required>
+                        <div class="error-message" id="clientNameError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">委托人电话 *</label>
+                        <input type="tel" class="form-input" id="clientPhone" placeholder="请输入委托人电话" required>
+                        <div class="error-message" id="clientPhoneError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">承办律师 *</label>
+                        <select class="form-select" id="lawyer" required>
+                            <option value="">请选择承办律师</option>
+                            <option value="张律师">张律师</option>
+                            <option value="李律师">李律师</option>
+                            <option value="王律师">王律师</option>
+                            <option value="刘律师">刘律师</option>
+                            <option value="陈律师">陈律师</option>
+                        </select>
+                        <div class="error-message" id="lawyerError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">案件描述</label>
+                        <textarea class="form-textarea" id="caseDesc" placeholder="请简要描述案件情况"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">预计开庭时间</label>
+                        <input type="date" class="form-input" id="courtDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">案件金额</label>
+                        <input type="number" class="form-input" id="caseAmount" placeholder="请输入案件金额（元）">
+                    </div>
+
+                    <button type="submit" class="btn">登记案件</button>
+                </form>
+            </div>
+
+            <!-- 案件列表页面 -->
+            <div id="list" class="page">
+                <!-- 案件提醒 -->
+                <div class="reminder">
+                    <div class="reminder-icon">⏰</div>
+                    <div class="reminder-content">
+                        <div class="reminder-title">案件提醒</div>
+                        <div class="reminder-desc">您有 <span id="pendingCount">0</span> 个待处理案件，<span id="upcomingCount">0</span> 个即将开庭的案件</div>
+                    </div>
+                </div>
+                
+                <div class="search-box">
+                    <input type="text" class="search-input" id="searchInput" placeholder="搜索案件编号、名称或委托人">
+                    <button class="search-btn" onclick="searchCases()">🔍</button>
+                </div>
+                
+                <!-- 筛选信息 -->
+                <div class="filter-info" id="filterInfo">
+                    当前筛选: <span id="currentFilters"></span>
+                    <span class="clear-filter" onclick="clearFilters()">清除筛选</span>
+                </div>
+                
+                <div class="sort-options">
+                    <button class="sort-btn" data-sort="createTimeDesc" onclick="sortCases('createTimeDesc')">最新创建</button>
+                    <button class="sort-btn" data-sort="updateTimeDesc" onclick="sortCases('updateTimeDesc')">最近更新</button>
+                    <button class="sort-btn" data-sort="amountDesc" onclick="sortCases('amountDesc')">金额最高</button>
+                    <button class="sort-btn" data-sort="pending" onclick="sortCases('pending')">待处理</button>
+                </div>
+                
+                <div class="batch-actions">
+                    <button class="batch-btn" onclick="batchUpdateStatus('待处理')">设为待处理</button>
+                    <button class="batch-btn" onclick="batchUpdateStatus('处理中')">设为处理中</button>
+                    <button class="batch-btn" onclick="batchUpdateStatus('已完成')">设为已完成</button>
+                </div>
+
+                <div class="filter-bar">
+                    <select class="filter-select" id="statusFilter" onchange="filterCases()">
+                        <option value="">全部状态</option>
+                        <option value="待处理">待处理</option>
+                        <option value="处理中">处理中</option>
+                        <option value="已完成">已完成</option>
+                    </select>
+
+                    <select class="filter-select" id="typeFilter" onchange="filterCases()">
+                        <option value="">全部类型</option>
+                        <option value="民事诉讼">民事诉讼</option>
+                        <option value="刑事辩护">刑事辩护</option>
+                        <option value="行政诉讼">行政诉讼</option>
+                        <option value="合同纠纷">合同纠纷</option>
+                        <option value="婚姻家庭">婚姻家庭</option>
+                        <option value="房产纠纷">房产纠纷</option>
+                        <option value="劳动争议">劳动争议</option>
+                        <option value="知识产权">知识产权</option>
+                    </select>
+
+                    <select class="filter-select" id="lawyerFilter" onchange="filterCases()">
+                        <option value="">全部律师</option>
+                        <option value="张律师">张律师</option>
+                        <option value="李律师">李律师</option>
+                        <option value="王律师">王律师</option>
+                        <option value="刘律师">刘律师</option>
+                        <option value="陈律师">陈律师</option>
+                    </select>
+                </div>
+                
+                <div class="loader" id="listLoader"></div>
+
+                <div id="caseList">
+                    <!-- 案件列表将在这里动态生成 -->
+                </div>
+            </div>
+
+            <!-- 统计分析页面 -->
+            <div id="stats" class="page">
+                <div class="stats-grid">
+                    <div class="stats-card">
+                        <div class="stats-number" id="totalCases">0</div>
+                        <div class="stats-label">总案件数</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-number" id="pendingCases">0</div>
+                        <div class="stats-label">待处理</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-number" id="processingCases">0</div>
+                        <div class="stats-label">处理中</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-number" id="completedCases">0</div>
+                        <div class="stats-label">已完成</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">📊 案件类型分布</div>
+                    <div id="typeChart"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">👥 律师工作量统计</div>
+                    <div id="lawyerChart"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">💰 案件金额统计</div>
+                    <div id="amountStats">
+                        <div class="stat-item">
+                            <span class="stat-label">总涉案金额</span>
+                            <span class="stat-value" id="totalAmount">¥0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">平均案件金额</span>
+                            <span class="stat-value" id="avgAmount">¥0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">最高案件金额</span>
+                            <span class="stat-value" id="maxAmount">¥0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">统计说明</span>
+                            <span class="stat-value">仅含金额>0案件</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-cases">
+                    <div class="chart-title">🕒 最近更新案件</div>
+                    <div id="recentCases"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 案件详情模态框 -->
+    <div id="caseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">案件详情</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody">
+                <!-- 案件详情内容 -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn-small btn-edit" id="editBtn">编辑案件</button>
+                <button class="btn-small btn-delete" id="deleteBtn">删除案件</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑案件模态框 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑案件</h3>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div id="editForm">
+                <!-- 编辑表单内容 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 成功提示 -->
+    <div id="toast" class="toast">操作成功！</div>
+
+    <script>
+        // 数据存储
+        let cases = [];
+        let caseCounter = 1;
+        let currentCaseId = null;
+        
+        // 当前筛选和排序状态
+        let currentSort = 'createTimeDesc';
+        let currentFilters = {
+            status: '',
+            type: '',
+            lawyer: '',
+            search: ''
+        };
+        
+        // 页面切换
+        function showPage(pageId) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // 移除所有tab的active状态
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示目标页面
+            document.getElementById(pageId).classList.add('active');
+            
+            // 激活对应tab
+            event.target.classList.add('active');
+            
+            // 如果是列表页面，刷新列表
+            if (pageId === 'list') {
+                renderCaseList();
+                updateReminder();
+            }
+            
+            // 如果是统计页面，刷新统计
+            if (pageId === 'stats') {
+                renderStats();
+            }
+        }
+        
+        // 生成案件编号
+        function generateCaseId() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const sequence = String(caseCounter).padStart(3, '0');
+            return `${year}${month}${day}${sequence}`;
+        }
+        
+        // 初始化表单
+        function initForm() {
+            document.getElementById('caseId').value = generateCaseId();
+        }
+        
+        // 显示错误消息
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId + 'Error');
+            const inputElement = document.getElementById(elementId);
+            
+            if (errorElement && inputElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                inputElement.classList.add('error');
+            }
+        }
+        
+        // 清除错误消息
+        function clearError(elementId) {
+            const errorElement = document.getElementById(elementId + 'Error');
+            const inputElement = document.getElementById(elementId);
+            
+            if (errorElement && inputElement) {
+                errorElement.style.display = 'none';
+                inputElement.classList.remove('error');
+            }
+        }
+        
+        // 显示成功提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 保存数据到本地存储
+        function saveToLocalStorage() {
+            localStorage.setItem('lawCases', JSON.stringify(cases));
+            localStorage.setItem('caseCounter', caseCounter.toString());
+        }
+        
+        // 从本地存储加载数据
+        function loadFromLocalStorage() {
+            const savedCases = localStorage.getItem('lawCases');
+            const savedCounter = localStorage.getItem('caseCounter');
+            
+            if (savedCases) {
+                cases = JSON.parse(savedCases);
+            }
+            
+            if (savedCounter) {
+                caseCounter = parseInt(savedCounter);
+            }
+        }
+        
+        // 案件登记
+        document.getElementById('caseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 清除所有错误信息
+            clearError('caseName');
+            clearError('caseType');
+            clearError('clientName');
+            clearError('clientPhone');
+            clearError('lawyer');
+            
+            let isValid = true;
+            const caseName = document.getElementById('caseName').value.trim();
+            const caseType = document.getElementById('caseType').value;
+            const clientName = document.getElementById('clientName').value.trim();
+            const clientPhone = document.getElementById('clientPhone').value.trim();
+            const lawyer = document.getElementById('lawyer').value;
+            
+            // 表单验证
+            if (!caseName) {
+                showError('caseName', '请输入案件名称');
+                isValid = false;
+            }
+            
+            if (!caseType) {
+                showError('caseType', '请选择案件类型');
+                isValid = false;
+            }
+            
+            if (!clientName) {
+                showError('clientName', '请输入委托人姓名');
+                isValid = false;
+            }
+            
+            if (!clientPhone) {
+                showError('clientPhone', '请输入委托人电话');
+                isValid = false;
+            } else if (!/^1[3-9]\d{9}$/.test(clientPhone)) {
+                showError('clientPhone', '请输入有效的手机号码');
+                isValid = false;
+            }
+            
+            if (!lawyer) {
+                showError('lawyer', '请选择承办律师');
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            const formData = new FormData(this);
+            const caseData = {
+                id: document.getElementById('caseId').value,
+                name: caseName,
+                type: caseType,
+                clientName: clientName,
+                clientPhone: clientPhone,
+                lawyer: lawyer,
+                description: document.getElementById('caseDesc').value,
+                courtDate: document.getElementById('courtDate').value,
+                amount: document.getElementById('caseAmount').value || '0',
+                status: '待处理',
+                createTime: new Date().toLocaleString(),
+                updateTime: new Date().toLocaleString()
+            };
+            
+            cases.push(caseData);
+            caseCounter++;
+            
+            // 保存到本地存储
+            saveToLocalStorage();
+            
+            // 重置表单
+            this.reset();
+            initForm();
+            
+            // 显示成功消息
+            showToast('案件登记成功！');
+            
+            // 如果当前在列表页面，刷新列表
+            if (document.getElementById('list').classList.contains('active')) {
+                renderCaseList();
+                updateReminder();
+            }
+        });
+        
+        // 获取筛选后的案件列表
+        function getFilteredCases() {
+            let filteredCases = [...cases];
+            
+            // 应用搜索筛选
+            if (currentFilters.search) {
+                const keyword = currentFilters.search.toLowerCase();
+                filteredCases = filteredCases.filter(caseItem =>
+                    caseItem.id.toLowerCase().includes(keyword) ||
+                    caseItem.name.toLowerCase().includes(keyword) ||
+                    caseItem.clientName.toLowerCase().includes(keyword) ||
+                    caseItem.type.toLowerCase().includes(keyword) ||
+                    caseItem.lawyer.toLowerCase().includes(keyword)
+                );
+            }
+            
+            // 应用状态筛选
+            if (currentFilters.status) {
+                filteredCases = filteredCases.filter(c => c.status === currentFilters.status);
+            }
+            
+            // 应用类型筛选
+            if (currentFilters.type) {
+                filteredCases = filteredCases.filter(c => c.type === currentFilters.type);
+            }
+            
+            // 应用律师筛选
+            if (currentFilters.lawyer) {
+                filteredCases = filteredCases.filter(c => c.lawyer === currentFilters.lawyer);
+            }
+            
+            return filteredCases;
+        }
+        
+        // 对案件列表进行排序
+        function sortCases(criteria) {
+            // 更新排序规则
+            currentSort = criteria;
+            
+            // 更新排序按钮状态
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.sort === criteria) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 重新渲染列表
+            renderCaseList();
+        }
+        
+        // 应用排序规则
+        function applySort(casesList) {
+            let sortedCases = [...casesList];
+            
+            switch(currentSort) {
+                case 'createTimeDesc':
+                    sortedCases.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+                    break;
+                case 'updateTimeDesc':
+                    sortedCases.sort((a, b) => new Date(b.updateTime) - new Date(a.updateTime));
+                    break;
+                case 'amountDesc':
+                    sortedCases.sort((a, b) => (parseFloat(b.amount) || 0) - (parseFloat(a.amount) || 0));
+                    break;
+                case 'pending':
+                    sortedCases.sort((a, b) => {
+                        if (a.status === '待处理' && b.status !== '待处理') return -1;
+                        if (a.status !== '待处理' && b.status === '待处理') return 1;
+                        return 0;
+                    });
+                    break;
+                default:
+                    // 默认排序
+                    sortedCases.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+            }
+            
+            return sortedCases;
+        }
+        
+        // 筛选案件
+        function filterCases() {
+            // 更新筛选条件
+            currentFilters = {
+                status: document.getElementById('statusFilter').value,
+                type: document.getElementById('typeFilter').value,
+                lawyer: document.getElementById('lawyerFilter').value,
+                search: document.getElementById('searchInput').value.toLowerCase().trim()
+            };
+            
+            // 更新筛选信息显示
+            updateFilterInfo();
+            
+            // 重新渲染列表
+            renderCaseList();
+        }
+        
+        // 更新筛选信息显示
+        function updateFilterInfo() {
+            const filterInfo = document.getElementById('filterInfo');
+            const currentFiltersEl = document.getElementById('currentFilters');
+            
+            const filters = [];
+            if (currentFilters.status) filters.push(`状态: ${currentFilters.status}`);
+            if (currentFilters.type) filters.push(`类型: ${currentFilters.type}`);
+            if (currentFilters.lawyer) filters.push(`律师: ${currentFilters.lawyer}`);
+            if (currentFilters.search) filters.push(`搜索: ${currentFilters.search}`);
+            
+            if (filters.length > 0) {
+                filterInfo.style.display = 'block';
+                currentFiltersEl.textContent = filters.join(', ');
+            } else {
+                filterInfo.style.display = 'none';
+            }
+        }
+        
+        // 清除筛选
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('lawyerFilter').value = '';
+            document.getElementById('searchInput').value = '';
+            
+            currentFilters = {
+                status: '',
+                type: '',
+                lawyer: '',
+                search: ''
+            };
+            
+            updateFilterInfo();
+            renderCaseList();
+        }
+        
+        // 搜索案件
+        function searchCases() {
+            currentFilters.search = document.getElementById('searchInput').value.toLowerCase().trim();
+            updateFilterInfo();
+            renderCaseList();
+        }
+        
+        // 渲染案件列表
+        function renderCaseList() {
+            const caseList = document.getElementById('caseList');
+            
+            // 显示加载指示器
+            const loader = document.getElementById('listLoader');
+            loader.style.display = 'block';
+            caseList.innerHTML = '';
+            
+            // 获取筛选后的案件
+            let filteredCases = getFilteredCases();
+            
+            // 应用排序
+            let sortedCases = applySort(filteredCases);
+            
+            // 模拟加载延迟
+            setTimeout(() => {
+                loader.style.display = 'none';
+                
+                if (sortedCases.length === 0) {
+                    caseList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📁</div>
+                            <p>没有找到符合条件的案件</p>
+                            <p style="margin-top: 10px; font-size: 14px; color: #999;">请尝试其他筛选条件</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                caseList.innerHTML = sortedCases.map(caseItem => `
+                    <div class="case-card" data-id="${caseItem.id}">
+                        <div class="case-header">
+                            <div class="case-id">${caseItem.id}</div>
+                            <div class="case-status ${getStatusClass(caseItem.status)}">${caseItem.status}</div>
+                        </div>
+                        <div class="case-info"><strong>${caseItem.name}</strong></div>
+                        <div class="case-info">类型：${caseItem.type}</div>
+                        <div class="case-info">委托人：${caseItem.clientName}</div>
+                        <div class="case-info">承办律师：${caseItem.lawyer}</div>
+                        <div class="case-info">创建时间：${caseItem.createTime}</div>
+                        <div class="case-actions">
+                            <button class="btn-small" onclick="viewCase('${caseItem.id}')">查看详情</button>
+                            <button class="btn-small" onclick="updateStatus('${caseItem.id}')">更新状态</button>
+                        </div>
+                    </div>
+                `).join('');
+            }, 500);
+        }
+        
+        // 获取状态样式类
+        function getStatusClass(status) {
+            switch(status) {
+                case '待处理': return 'status-pending';
+                case '处理中': return 'status-processing';
+                case '已完成': return 'status-completed';
+                default: return 'status-pending';
+            }
+        }
+        
+        // 查看案件详情
+        function viewCase(caseId) {
+            const caseItem = cases.find(c => c.id === caseId);
+            if (!caseItem) return;
+            
+            currentCaseId = caseId;
+            
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">案件编号</label>
+                    <div style="padding: 8px 0; font-weight: 500;">${caseItem.id}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">案件名称</label>
+                    <div style="padding: 8px 0; font-weight: 500;">${caseItem.name}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">案件类型</label>
+                    <div style="padding: 8px 0;">${caseItem.type}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">委托人信息</label>
+                    <div style="padding: 8px 0;">${caseItem.clientName} - ${caseItem.clientPhone}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">承办律师</label>
+                    <div style="padding: 8px 0;">${caseItem.lawyer}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">案件状态</label>
+                    <div style="padding: 8px 0;">
+                        <span class="case-status ${getStatusClass(caseItem.status)}">${caseItem.status}</span>
+                    </div>
+                </div>
+                ${caseItem.description ? `
+                <div class="form-group">
+                    <label class="form-label">案件描述</label>
+                    <div style="padding: 8px 0; line-height: 1.5;">${caseItem.description}</div>
+                </div>
+                ` : ''}
+                ${caseItem.courtDate ? `
+                <div class="form-group">
+                    <label class="form-label">预计开庭时间</label>
+                    <div style="padding: 8px 0;">${caseItem.courtDate}</div>
+                </div>
+                ` : ''}
+                ${caseItem.amount ? `
+                <div class="form-group">
+                    <label class="form-label">案件金额</label>
+                    <div style="padding: 8px 0;">${Number(caseItem.amount).toLocaleString()} 元</div>
+                </div>
+                ` : ''}
+                <div class="form-group">
+                    <label class="form-label">创建时间</label>
+                    <div style="padding: 8px 0;">${caseItem.createTime}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">更新时间</label>
+                    <div style="padding: 8px 0;">${caseItem.updateTime}</div>
+                </div>
+            `;
+            
+            // 设置按钮事件
+            document.getElementById('deleteBtn').onclick = function() {
+                if (confirm('确定要删除这个案件吗？')) {
+                    deleteCase(caseId);
+                }
+            };
+            
+            document.getElementById('editBtn').onclick = function() {
+                closeModal();
+                openEditModal(caseItem);
+            };
+            
+            document.getElementById('caseModal').classList.add('show');
+        }
+        
+        // 打开编辑案件模态框
+        function openEditModal(caseItem) {
+            const editForm = document.getElementById('editForm');
+            editForm.innerHTML = `
+                <form id="editCaseForm">
+                    <div class="form-group">
+                        <label class="form-label">案件编号</label>
+                        <input type="text" class="form-input" value="${caseItem.id}" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件名称 *</label>
+                        <input type="text" class="form-input" id="editCaseName" value="${caseItem.name}" required>
+                        <div class="error-message" id="editCaseNameError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件类型 *</label>
+                        <select class="form-select" id="editCaseType" required>
+                            <option value="">请选择案件类型</option>
+                            <option value="民事诉讼" ${caseItem.type === '民事诉讼' ? 'selected' : ''}>民事诉讼</option>
+                            <option value="刑事辩护" ${caseItem.type === '刑事辩护' ? 'selected' : ''}>刑事辩护</option>
+                            <option value="行政诉讼" ${caseItem.type === '行政诉讼' ? 'selected' : ''}>行政诉讼</option>
+                            <option value="合同纠纷" ${caseItem.type === '合同纠纷' ? 'selected' : ''}>合同纠纷</option>
+                            <option value="婚姻家庭" ${caseItem.type === '婚姻家庭' ? 'selected' : ''}>婚姻家庭</option>
+                            <option value="房产纠纷" ${caseItem.type === '房产纠纷' ? 'selected' : ''}>房产纠纷</option>
+                            <option value="劳动争议" ${caseItem.type === '劳动争议' ? 'selected' : ''}>劳动争议</option>
+                            <option value="知识产权" ${caseItem.type === '知识产权' ? 'selected' : ''}>知识产权</option>
+                            <option value="其他" ${caseItem.type === '其他' ? 'selected' : ''}>其他</option>
+                        </select>
+                        <div class="error-message" id="editCaseTypeError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">委托人姓名 *</label>
+                        <input type="text" class="form-input" id="editClientName" value="${caseItem.clientName}" required>
+                        <div class="error-message" id="editClientNameError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">委托人电话 *</label>
+                        <input type="tel" class="form-input" id="editClientPhone" value="${caseItem.clientPhone}" required>
+                        <div class="error-message" id="editClientPhoneError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">承办律师 *</label>
+                        <select class="form-select" id="editLawyer" required>
+                            <option value="">请选择承办律师</option>
+                            <option value="张律师" ${caseItem.lawyer === '张律师' ? 'selected' : ''}>张律师</option>
+                            <option value="李律师" ${caseItem.lawyer === '李律师' ? 'selected' : ''}>李律师</option>
+                            <option value="王律师" ${caseItem.lawyer === '王律师' ? 'selected' : ''}>王律师</option>
+                            <option value="刘律师" ${caseItem.lawyer === '刘律师' ? 'selected' : ''}>刘律师</option>
+                            <option value="陈律师" ${caseItem.lawyer === '陈律师' ? 'selected' : ''}>陈律师</option>
+                        </select>
+                        <div class="error-message" id="editLawyerError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件描述</label>
+                        <textarea class="form-textarea" id="editCaseDesc">${caseItem.description || ''}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">预计开庭时间</label>
+                        <input type="date" class="form-input" id="editCourtDate" value="${caseItem.courtDate || ''}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件金额</label>
+                        <input type="number" class="form-input" id="editCaseAmount" value="${caseItem.amount || ''}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">案件状态</label>
+                        <select class="form-select" id="editCaseStatus">
+                            <option value="待处理" ${caseItem.status === '待处理' ? 'selected' : ''}>待处理</option>
+                            <option value="处理中" ${caseItem.status === '处理中' ? 'selected' : ''}>处理中</option>
+                            <option value="已完成" ${caseItem.status === '已完成' ? 'selected' : ''}>已完成</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn">保存修改</button>
+                </form>
+            `;
+            
+            // 绑定编辑表单提交事件
+            document.getElementById('editCaseForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveEditedCase(caseItem.id);
+            });
+            
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        // 保存编辑后的案件
+        function saveEditedCase(caseId) {
+            const caseItem = cases.find(c => c.id === caseId);
+            if (!caseItem) return;
+            
+            // 清除所有错误信息
+            clearError('editCaseName');
+            clearError('editCaseType');
+            clearError('editClientName');
+            clearError('editClientPhone');
+            clearError('editLawyer');
+            
+            let isValid = true;
+            const caseName = document.getElementById('editCaseName').value.trim();
+            const caseType = document.getElementById('editCaseType').value;
+            const clientName = document.getElementById('editClientName').value.trim();
+            const clientPhone = document.getElementById('editClientPhone').value.trim();
+            const lawyer = document.getElementById('editLawyer').value;
+            
+            // 表单验证
+            if (!caseName) {
+                showError('editCaseName', '请输入案件名称');
+                isValid = false;
+            }
+            
+            if (!caseType) {
+                showError('editCaseType', '请选择案件类型');
+                isValid = false;
+            }
+            
+            if (!clientName) {
+                showError('editClientName', '请输入委托人姓名');
+                isValid = false;
+            }
+            
+            if (!clientPhone) {
+                showError('editClientPhone', '请输入委托人电话');
+                isValid = false;
+            } else if (!/^1[3-9]\d{9}$/.test(clientPhone)) {
+                showError('editClientPhone', '请输入有效的手机号码');
+                isValid = false;
+            }
+            
+            if (!lawyer) {
+                showError('editLawyer', '请选择承办律师');
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // 更新案件信息
+            caseItem.name = caseName;
+            caseItem.type = caseType;
+            caseItem.clientName = clientName;
+            caseItem.clientPhone = clientPhone;
+            caseItem.lawyer = lawyer;
+            caseItem.description = document.getElementById('editCaseDesc').value;
+            caseItem.courtDate = document.getElementById('editCourtDate').value;
+            caseItem.amount = document.getElementById('editCaseAmount').value || '0';
+            caseItem.status = document.getElementById('editCaseStatus').value;
+            caseItem.updateTime = new Date().toLocaleString();
+            
+            // 保存到本地存储
+            saveToLocalStorage();
+            
+            // 关闭编辑模态框
+            closeEditModal();
+            
+            // 刷新列表和统计
+            renderCaseList();
+            if (document.getElementById('stats').classList.contains('active')) {
+                renderStats();
+            }
+            
+            // 显示成功消息
+            showToast('案件信息已更新！');
+        }
+        
+        // 删除案件
+        function deleteCase(caseId) {
+            cases = cases.filter(c => c.id !== caseId);
+            saveToLocalStorage();
+            renderCaseList();
+            closeModal();
+            showToast('案件已删除');
+            
+            // 如果当前在统计页面，刷新统计
+            if (document.getElementById('stats').classList.contains('active')) {
+                renderStats();
+            }
+        }
+        
+        // 更新案件状态
+        function updateStatus(caseId) {
+            const caseItem = cases.find(c => c.id === caseId);
+            if (!caseItem) return;
+            
+            const statuses = ['待处理', '处理中', '已完成'];
+            const currentIndex = statuses.indexOf(caseItem.status);
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            
+            caseItem.status = statuses[nextIndex];
+            caseItem.updateTime = new Date().toLocaleString();
+            
+            saveToLocalStorage();
+            renderCaseList();
+            showToast(`案件状态已更新为: ${statuses[nextIndex]}`);
+            
+            if (document.getElementById('stats').classList.contains('active')) {
+                renderStats();
+            }
+        }
+        
+        // 批量更新案件状态
+        function batchUpdateStatus(status) {
+            // 获取当前筛选条件下的案件
+            let filteredCases = getFilteredCases();
+            
+            if (filteredCases.length === 0) {
+                showToast('没有可更新的案件');
+                return;
+            }
+            
+            if (confirm(`确定要将筛选出的 ${filteredCases.length} 个案件状态更新为 ${status} 吗？`)) {
+                const caseIds = filteredCases.map(c => c.id);
+                
+                cases.forEach(c => {
+                    if (caseIds.includes(c.id)) {
+                        c.status = status;
+                        c.updateTime = new Date().toLocaleString();
+                    }
+                });
+                
+                saveToLocalStorage();
+                renderCaseList();
+                showToast(`已更新 ${caseIds.length} 个案件状态为 ${status}`);
+                
+                if (document.getElementById('stats').classList.contains('active')) {
+                    renderStats();
+                }
+            }
+        }
+        
+        // 更新案件提醒
+        function updateReminder() {
+            const pending = cases.filter(c => c.status === '待处理').length;
+            
+            // 获取未来7天内开庭的案件
+            const today = new Date();
+            const nextWeek = new Date(today);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            
+            const upcoming = cases.filter(c => {
+                if (!c.courtDate) return false;
+                const courtDate = new Date(c.courtDate);
+                return courtDate >= today && courtDate <= nextWeek;
+            }).length;
+            
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('upcomingCount').textContent = upcoming;
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('caseModal').classList.remove('show');
+            currentCaseId = null;
+        }
+        
+        // 关闭编辑模态框
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+        }
+        
+        // 渲染统计信息
+        function renderStats() {
+            const total = cases.length;
+            const pending = cases.filter(c => c.status === '待处理').length;
+            const processing = cases.filter(c => c.status === '处理中').length;
+            const completed = cases.filter(c => c.status === '已完成').length;
+            
+            // 更新基础统计
+            document.getElementById('totalCases').textContent = total;
+            document.getElementById('pendingCases').textContent = pending;
+            document.getElementById('processingCases').textContent = processing;
+            document.getElementById('completedCases').textContent = completed;
+            
+            // 案件类型统计（带进度条）
+            const typeStats = {};
+            cases.forEach(c => {
+                typeStats[c.type] = (typeStats[c.type] || 0) + 1;
+            });
+            
+            const typeChart = document.getElementById('typeChart');
+            const maxTypeCount = Math.max(...Object.values(typeStats), 1);
+            typeChart.innerHTML = Object.entries(typeStats)
+                .sort((a, b) => b[1] - a[1])
+                .map(([type, count]) => {
+                    const percentage = (count / maxTypeCount) * 100;
+                    return `
+                        <div class="stat-item">
+                            <div>
+                                <div class="stat-label">${type}</div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-value">${count}件</div>
+                        </div>
+                    `;
+                }).join('') || '<p style="color: #666; text-align: center; padding: 20px;">暂无数据</p>';
+            
+            // 律师工作量统计（带进度条）
+            const lawyerStats = {};
+            cases.forEach(c => {
+                lawyerStats[c.lawyer] = (lawyerStats[c.lawyer] || 0) + 1;
+            });
+            
+            const lawyerChart = document.getElementById('lawyerChart');
+            const maxLawyerCount = Math.max(...Object.values(lawyerStats), 1);
+            lawyerChart.innerHTML = Object.entries(lawyerStats)
+                .sort((a, b) => b[1] - a[1])
+                .map(([lawyer, count]) => {
+                    const percentage = (count / maxLawyerCount) * 100;
+                    return `
+                        <div class="stat-item">
+                            <div>
+                                <div class="stat-label">${lawyer}</div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-value">${count}件</div>
+                        </div>
+                    `;
+                }).join('') || '<p style="color: #666; text-align: center; padding: 20px;">暂无数据</p>';
+            
+            // 案件金额统计
+            const amounts = cases
+                .map(c => parseFloat(c.amount) || 0)
+                .filter(amount => amount > 0);
+            
+            const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
+            const avgAmount = amounts.length > 0 ? totalAmount / amounts.length : 0;
+            const maxAmount = amounts.length > 0 ? Math.max(...amounts) : 0;
+            
+            document.getElementById('totalAmount').textContent =
+                `¥${totalAmount.toLocaleString()}`;
+            document.getElementById('avgAmount').textContent =
+                `¥${Math.round(avgAmount).toLocaleString()}`;
+            document.getElementById('maxAmount').textContent =
+                `¥${maxAmount.toLocaleString()}`;
+            
+            // 最近更新案件
+            const recentCases = [...cases]
+                .sort((a, b) => new Date(b.updateTime) - new Date(a.updateTime))
+                .slice(0, 5);
+            
+            const recentCasesEl = document.getElementById('recentCases');
+            recentCasesEl.innerHTML = recentCases.map(caseItem => {
+                const statusDot = caseItem.status === '待处理' ? 'dot-pending' :
+                                 caseItem.status === '处理中' ? 'dot-processing' : 'dot-completed';
+                
+                return `
+                    <div class="recent-case-item" onclick="viewCase('${caseItem.id}')">
+                        <div class="case-dot ${statusDot}"></div>
+                        <div class="recent-case-content">
+                            <div class="recent-case-name">${caseItem.name}</div>
+                            <div class="recent-case-meta">
+                                ${caseItem.lawyer} · ${caseItem.updateTime.split(' ')[0]}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('') || '<p style="color: #666; text-align: center; padding: 20px;">暂无数据</p>';
+        }
+        
+        // 搜索框回车事件
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchCases();
+            }
+        });
+        
+        // 点击模态框外部关闭
+        document.getElementById('caseModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+        
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从本地存储加载数据
+            loadFromLocalStorage();
+            initForm();
+            
+            // 初始化排序按钮状态
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                if (btn.dataset.sort === currentSort) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 更新提醒
+            updateReminder();
+            
+            // 添加丰富的示例数据（仅当本地存储为空时）
+            if (cases.length === 0) {
+                const sampleCases = [
+                    {
+                        id: generateCaseId(),
+                        name: "张三与李四合同纠纷案",
+                        type: "合同纠纷",
+                        clientName: "张三",
+                        clientPhone: "13800138001",
+                        lawyer: "张律师",
+                        description: "因房屋买卖合同履行产生争议，涉及违约责任认定",
+                        courtDate: "2025-08-15",
+                        amount: "500000",
+                        status: "处理中",
+                        createTime: "2025-07-20 10:30:00",
+                        updateTime: "2025-07-25 14:20:00"
+                    },
+                    {
+                        id: generateCaseId(),
+                        name: "王某交通事故赔偿案",
+                        type: "民事诉讼",
+                        clientName: "王某",
+                        clientPhone: "13900139002",
+                        lawyer: "李律师",
+                        description: "交通事故导致人身损害赔偿纠纷，需进行伤残鉴定",
+                        courtDate: "2025-08-20",
+                        amount: "150000",
+                        status: "待处理",
+                        createTime: "2025-07-28 09:15:00",
+                        updateTime: "2025-07-28 09:15:00"
+                    },
+                    {
+                        id: generateCaseId(),
+                        name: "陈某刑事辩护案",
+                        type: "刑事辩护",
+                        clientName: "陈某",
+                        clientPhone: "13700137003",
+                        lawyer: "王律师",
+                        description: "涉嫌合同诈骗罪，需要进行无罪辩护",
+                        courtDate: "2025-09-10",
+                        amount: "0",
+                        status: "处理中",
+                        createTime: "2025-06-15 14:20:00",
+                        updateTime: "2025-07-20 16:30:00"
+                    },
+                    {
+                        id: generateCaseId(),
+                        name: "刘某离婚财产分割案",
+                        type: "婚姻家庭",
+                        clientName: "刘某",
+                        clientPhone: "13600136004",
+                        lawyer: "陈律师",
+                        description: "夫妻感情破裂，涉及房产和子女抚养权争议",
+                        courtDate: "2025-08-30",
+                        amount: "300000",
+                        status: "已完成",
+                        createTime: "2025-05-10 11:00:00",
+                        updateTime: "2025-07-15 09:45:00"
+                    },
+                    {
+                        id: generateCaseId(),
+                        name: "某公司劳动争议案",
+                        type: "劳动争议",
+                        clientName: "赵某",
+                        clientPhone: "13500135005",
+                        lawyer: "刘律师",
+                        description: "公司违法解除劳动合同，要求经济补偿",
+                        courtDate: "2025-09-05",
+                        amount: "80000",
+                        status: "处理中",
+                        createTime: "2025-07-10 16:30:00",
+                        updateTime: "2025-07-28 10:15:00"
+                    },
+                    {
+                        id: generateCaseId(),
+                        name: "知识产权侵权案",
+                        type: "知识产权",
+                        clientName: "某科技公司",
+                        clientPhone: "13400134006",
+                        lawyer: "张律师",
+                        description: "商标侵权纠纷，要求停止侵权并赔偿损失",
+                        courtDate: "2025-09-20",
+                        amount: "1200000",
+                        status: "待处理",
+                        createTime: "2025-07-25 13:45:00",
+                        updateTime: "2025-07-25 13:45:00"
+                    },
+                    {
+                        id: generateCaseId(),
+                        name: "房产买卖纠纷案",
+                        type: "房产纠纷",
+                        clientName: "孙某",
+                        clientPhone: "13300133007",
+                        lawyer: "李律师",
+                        description: "二手房交易中卖方隐瞒房屋抵押情况",
+                        courtDate: "",
+                        amount: "450000",
+                        status: "已完成",
+                        createTime: "2025-04-20 10:20:00",
+                        updateTime: "2025-06-30 14:00:00"
+                    },
+                    {
+                        id: generateCaseId(),
+                        name: "行政诉讼案",
+                        type: "行政诉讼",
+                        clientName: "周某",
+                        clientPhone: "13200132008",
+                        lawyer: "王律师",
+                        description: "对政府拆迁补偿决定不服，提起行政诉讼",
+                        courtDate: "2025-09-15",
+                        amount: "800000",
+                        status: "处理中",
+                        createTime: "2025-06-30 09:30:00",
+                        updateTime: "2025-07-26 11:20:00"
+                    }
+                ];
+                
+                cases = sampleCases;
+                caseCounter = sampleCases.length + 1;
+                
+                // 保存示例数据到本地存储
+                saveToLocalStorage();
+            }
+        });
+    </script>
+</body>
+</html>
