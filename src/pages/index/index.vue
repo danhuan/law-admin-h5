@@ -1,99 +1,82 @@
 <template>
   <view class="container">
     <view class="header">
-      <text class="title">CloudBase UniApp 模板</text>
-      <text class="subtitle">基于云开发的跨平台应用模板</text>
+      <text class="title">律所案件管理系统</text>
+      <text class="subtitle">高效管理案件,提升工作效率</text>
     </view>
 
-    <view class="features">
-      <view class="feature-card">
-        <text class="feature-icon">🚀</text>
-        <text class="feature-title">多端支持</text>
-        <text class="feature-desc">一套代码，多端运行</text>
+    <view class="statistics">
+      <view class="stat-card">
+        <text class="stat-number">{{totalCases}}</text>
+        <text class="stat-label">总案件数</text>
       </view>
-
-      <view class="feature-card">
-        <text class="feature-icon">⚡</text>
-        <text class="feature-title">云开发集成</text>
-        <text class="feature-desc">内置云函数、数据库、存储</text>
+      <view class="stat-card">
+        <text class="stat-number">{{activeCases}}</text>
+        <text class="stat-label">进行中案件</text>
       </view>
-
-      <view class="feature-card">
-        <text class="feature-icon">🔧</text>
-        <text class="feature-title">开箱即用</text>
-        <text class="feature-desc">完整的开发工具链</text>
+      <view class="stat-card">
+        <text class="stat-number">{{closedCases}}</text>
+        <text class="stat-label">已结案件</text>
       </view>
     </view>
 
     <view class="actions">
-      <button class="btn btn-primary" @click="goToDemo">
-        体验云开发功能
+      <button class="btn btn-primary" @click="goToNewCase">
+        新增案件
       </button>
-      <button class="btn btn-success" @click="goToLogin">
-        选择登录方式
+      <button class="btn btn-success" @click="goToCaseList">
+        案件列表
       </button>
       <button class="btn btn-info" @click="goToProfile">
-        查看用户信息
+        个人中心
       </button>
-      <button class="btn btn-secondary" @click="openDocs">
-        查看文档
-      </button>
-    </view>
-
-    <view class="footer">
-      <image class="logo" src="https://7463-tcb-advanced-a656fc-1257967285.tcb.qcloud.la/mcp/powered-by-cloudbase-badge.svg" mode="widthFix" />
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-// 跳转到演示页面
-const goToDemo = () => {
+const totalCases = ref(0)
+const activeCases = ref(0)
+const closedCases = ref(0)
+
+// 页面跳转函数
+const goToNewCase = () => {
   uni.navigateTo({
-    url: '/pages/demo/demo'
+    url: '/pages/cases/new'
   })
 }
 
-// 跳转到登录页面
-const goToLogin = () => {
+const goToCaseList = () => {
   uni.navigateTo({
-    url: '/pages/login/index'
-  });
+    url: '/pages/cases/list'
+  })
 }
 
-// 跳转到用户信息页面
 const goToProfile = () => {
   uni.navigateTo({
     url: '/pages/profile/profile'
   })
 }
 
-// 打开文档
-const openDocs = () => {
-  // #ifdef H5
-  window.open('https://docs.cloudbase.net/', '_blank')
-  // #endif
-
-  // #ifndef H5
-  uni.setClipboardData({
-    data: 'https://docs.cloudbase.net/',
-    success: () => {
-      uni.showToast({
-        title: '文档地址已复制',
-        icon: 'success'
-      })
-    }
-  })
-  // #endif
+// 获取统计数据
+const fetchStatistics = async () => {
+  // 这里将来需要对接云数据库
+  totalCases.value = 0
+  activeCases.value = 0
+  closedCases.value = 0
 }
+
+onMounted(() => {
+  fetchStatistics()
+})
 </script>
 
 <style scoped>
 .container {
   padding: 40rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -118,39 +101,33 @@ const openDocs = () => {
   display: block;
 }
 
-.features {
+.statistics {
   display: flex;
-  flex-direction: column;
-  gap: 20rpx;
+  justify-content: space-between;
   margin-bottom: 60rpx;
 }
 
-.feature-card {
+.stat-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10rpx);
   border-radius: 20rpx;
   padding: 30rpx;
-  border: 2rpx solid rgba(255, 255, 255, 0.2);
+  flex: 1;
+  margin: 0 10rpx;
+  text-align: center;
 }
 
-.feature-icon {
+.stat-number {
   font-size: 48rpx;
-  display: block;
-  margin-bottom: 15rpx;
-}
-
-.feature-title {
-  font-size: 32rpx;
   font-weight: bold;
   color: white;
   display: block;
-  margin-bottom: 10rpx;
 }
 
-.feature-desc {
-  font-size: 26rpx;
+.stat-label {
+  font-size: 24rpx;
   color: rgba(255, 255, 255, 0.8);
-  line-height: 1.4;
+  margin-top: 10rpx;
 }
 
 .actions {

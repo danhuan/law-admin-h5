@@ -41,6 +41,7 @@ export const app = init();
  * 云开发认证实例
  */
 export const auth = app.auth();
+export const db = app.database()
 
 /**
  * 检查环境配置是否有效
@@ -59,18 +60,26 @@ export const checkEnvironment = () => {
  * 执行登录
  * @returns {Promise} 登录状态
  */
-export const login = async () => {
-  // const auth = app.auth();
-  try {
-    // 默认采用匿名登录
-    await auth.signInAnonymously();
-    // 也可以换成跳转SDK 内置的登录页面，支持账号密码登录/手机号登录/微信登录,目前只支持 web 端，小程序等其他平台请自行实现登录逻辑
-    // await auth.toDefaultLoginPage()
-  } catch (error) {
-    console.error('登录失败:', error);
-    throw error;
+// export const login = async () => {
+//   // const auth = app.auth();
+//   try {
+//     // 默认采用匿名登录
+//     await auth.signInAnonymously();
+//     // 也可以换成跳转SDK 内置的登录页面，支持账号密码登录/手机号登录/微信登录,目前只支持 web 端，小程序等其他平台请自行实现登录逻辑
+//     // await auth.toDefaultLoginPage()
+//   } catch (error) {
+//     console.error('登录失败:', error);
+//     throw error;
+//   }
+// };
+
+export async function login() {
+  const loginState = await auth.getLoginState()
+  if (!loginState) {
+    await auth.anonymousAuthProvider().signIn()
   }
-};
+  return auth.currentUser
+}
 
 /**
  * 微信小程序手机号一键登录

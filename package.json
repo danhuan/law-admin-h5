@@ -1,7 +1,7 @@
 {
-  "name": "cloudbase-uniapp-template",
+  "name": "law-admin-h5",
   "version": "1.0.0",
-  "description": "基于 UniApp 和腾讯云开发（CloudBase）的跨平台应用模板",
+  "description": "律所案件管理小程序",
   "scripts": {
     "dev:custom": "uni -p",
     "dev:h5": "uni",
